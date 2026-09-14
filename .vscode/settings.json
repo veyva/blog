@@ -1,0 +1,14 @@
+{
+  "markdown.editor.filePaste.enabled": true,
+  "markdown.editor.drop.enabled": true,
+  "markdown.copyFiles.destination": {
+    "/src/content/blog/**/*": "images/${documentBaseName}/"
+  },
+  "pasteImage.path": "${currentFileDir}/images/${currentFileNameWithoutExt}",
+  "pasteImage.basePath": "${currentFileDir}",
+  "pasteImage.prefix": "",
+  "pasteImage.insertPattern": "![${imageFileNameWithoutExt}](${imageFilePath})",
+  "pasteImage.forceUnixStyleSeparator": true,
+  "pasteImage.showFilePathConfirmInputBox": true,
+  "pasteImage.filePathConfirmInputBoxMode": "onlyName"
+}

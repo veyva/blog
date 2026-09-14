@@ -4,9 +4,17 @@ import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
 
+const repository = process.env.GITHUB_REPOSITORY ?? 'your-github-username/blog';
+const [owner = 'your-github-username', repo = 'blog'] = repository.split('/');
+const isUserSite = repo === `${owner}.github.io`;
+const defaultBase = process.env.GITHUB_ACTIONS === 'true' && !isUserSite ? `/${repo}` : undefined;
+const base = process.env.BASE_PATH === '/' ? undefined : (process.env.BASE_PATH ?? defaultBase);
+const site = process.env.SITE_URL ?? `https://${owner}.github.io`;
+
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://example.com',
+	site,
+	...(base ? { base } : {}),
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{
