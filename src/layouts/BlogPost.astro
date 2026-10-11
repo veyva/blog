@@ -22,6 +22,8 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 			}
 			.hero-image {
 				width: 100%;
+				max-width: 1120px;
+				margin: 0 auto;
 			}
 			.hero-image img {
 				display: block;
@@ -29,11 +31,106 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 				border-radius: 12px;
 				box-shadow: var(--box-shadow);
 			}
+			.article-shell {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+				gap: 2.25rem;
+				max-width: 1280px;
+				margin: 0 auto;
+				align-items: start;
+			}
+			.toc {
+				position: sticky;
+				top: 2rem;
+				padding-top: 1rem;
+				justify-self: end;
+				width: 100%;
+				max-width: 260px;
+			}
+			.toc-title {
+				margin: 0 0 0.75rem;
+				font-size: 0.75rem;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				color: var(--muted);
+				font-weight: 700;
+			}
+			.toc-list,
+			.toc-list ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.toc-list {
+				display: grid;
+				gap: 0.35rem;
+			}
+			.toc-list li {
+				margin: 0;
+			}
+			.toc-section {
+				border-radius: 8px;
+			} 
+			.toc-section-toggle {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				width: 100%;
+				padding: 0.35rem 0.5rem;
+				border: none;
+				background: transparent;
+				color: var(--ink-soft);
+				border-radius: 6px;
+				cursor: pointer;
+				font: inherit;
+				text-align: left;
+				font-weight: 600;
+			}
+			.toc-section-toggle:hover,
+			.toc-section-toggle.is-active {
+				background: var(--accent-soft);
+				color: var(--accent);
+			}
+			.toc-toggle-mark {
+				display: inline-block;
+				width: 0.8em;
+				text-align: center;
+				color: var(--muted);
+				font-size: 0.8em;
+			}
+			.toc-section-list {
+				display: grid;
+				gap: 0.2rem;
+				padding-left: 0.7rem;
+				margin-top: 0.15rem;
+			}
+			.toc-section.is-collapsed > .toc-section-list {
+				display: none;
+			}
+			.toc-item {
+				display: block;
+				padding: 0.28rem 0.55rem 0.28rem 0.75rem;
+				border-radius: 6px;
+				color: var(--ink-soft);
+				text-decoration: none;
+				line-height: 1.45;
+				transition: background-color 0.2s ease, color 0.2s ease;
+				font-size: 0.93em;
+			}
+			.toc-item:hover,
+			.toc-item.is-active {
+				background: var(--accent-soft);
+				color: var(--accent);
+			}
+			.toc-item.toc-sub-item {
+				margin-left: 0.8rem;
+				font-size: 0.88em;
+			}
 			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
+				width: min(860px, 100%);
+				max-width: 100%;
+				margin: 0;
+				padding: 1em 0 2rem;
 				color: rgb(var(--gray-dark));
 			}
 			.title {
@@ -52,6 +149,20 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 			.last-updated-on {
 				font-style: italic;
 			}
+			@media (max-width: 980px) {
+				.article-shell {
+					grid-template-columns: 1fr;
+					gap: 0;
+				}
+				.toc {
+					position: static;
+					padding-top: 0;
+					margin-bottom: 1.5rem;
+				}
+				.toc-list {
+					grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+				}
+			}
 		</style>
 	</head>
 
@@ -62,25 +173,129 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 				<div class="hero-image">
 					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
 				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										最后更新于 <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
+				<div class="article-shell">
+					<div class="prose">
+						<div class="title">
+							<div class="date">
+								<FormattedDate date={pubDate} />
+								{
+									updatedDate && (
+										<div class="last-updated-on">
+											最后更新于 <FormattedDate date={updatedDate} />
+										</div>
+									)
+								}
+							</div>
+							<h1>{title}</h1>
+							<hr />
 						</div>
-						<h1>{title}</h1>
-						<hr />
+						<slot />
 					</div>
-					<slot />
+					<aside class="toc" aria-label="文章目录">
+						<div class="toc-title">目录</div>
+						<ul class="toc-list" data-toc-list></ul>
+					</aside>
 				</div>
 			</article>
 		</main>
 		<Footer />
+		<script>
+			const slugify = (value) => value
+				.toLowerCase()
+				.normalize('NFKD')
+				.replace(/[\u0300-\u036f]/g, '')
+				.replace(/[^\w\-\s]/g, '')
+				.trim()
+				.replace(/\s+/g, '-') || 'section';
+
+			const buildToc = () => {
+				const tocList = document.querySelector('[data-toc-list]');
+				const prose = document.querySelector('.prose');
+				if (!tocList || !prose) return;
+				const headings = Array.from(prose.querySelectorAll('h2, h3'));
+				if (!headings.length) {
+					tocList.innerHTML = '';
+					return;
+				}
+
+				const groups = [];
+				let currentGroup = null;
+
+				headings.forEach((heading, index) => {
+					const rawText = heading.textContent.trim();
+					const slug = slugify(rawText);
+					const id = `${slug}-${index + 1}`;
+					heading.id = id;
+
+					if (heading.tagName === 'H2') {
+						currentGroup = {
+							title: rawText,
+							id,
+							items: []
+						};
+						groups.push(currentGroup);
+					} else if (currentGroup) {
+						currentGroup.items.push({ title: rawText, id });
+					}
+				});
+
+				tocList.innerHTML = groups.map((group) => {
+					const childItems = group.items.map((item) => `
+						<li>
+							<a class="toc-item toc-sub-item" href="#${item.id}">${item.title}</a>
+						</li>
+					`).join('');
+					return `
+						<li class="toc-section">
+							<button class="toc-section-toggle" type="button" aria-expanded="true">
+								<span>${group.title}</span>
+								<span class="toc-toggle-mark">▾</span>
+							</button>
+							<ul class="toc-section-list">${childItems}</ul>
+						</li>
+					`;
+				}).join('');
+
+				tocList.querySelectorAll('.toc-section-toggle').forEach((toggle) => {
+					toggle.addEventListener('click', () => {
+						const section = toggle.closest('.toc-section');
+						if (!section) return;
+						const isCollapsed = section.classList.toggle('is-collapsed');
+						toggle.setAttribute('aria-expanded', String(!isCollapsed));
+						toggle.querySelector('.toc-toggle-mark').textContent = isCollapsed ? '▸' : '▾';
+					});
+				});
+			};
+
+			const setActiveToc = () => {
+				const links = [...document.querySelectorAll('[data-toc-list] a')];
+				if (!links.length) return;
+				let activeId = '';
+				for (const link of links) {
+					const id = link.getAttribute('href')?.slice(1);
+					if (!id) continue;
+					const section = document.getElementById(id);
+					if (!section) continue;
+					const rect = section.getBoundingClientRect();
+					if (rect.top <= 180) {
+						activeId = id;
+					}
+				}
+				links.forEach((link) => {
+					const isActive = link.getAttribute('href') === `#${activeId}`;
+					link.classList.toggle('is-active', isActive);
+					const sectionToggle = link.closest('.toc-section')?.querySelector('.toc-section-toggle');
+					if (sectionToggle && isActive) {
+						sectionToggle.classList.add('is-active');
+					} else if (sectionToggle) {
+						sectionToggle.classList.remove('is-active');
+					}
+				});
+			};
+
+			buildToc();
+			setActiveToc();
+			window.addEventListener('scroll', setActiveToc, { passive: true });
+		</script>
 	</body>
 </html>

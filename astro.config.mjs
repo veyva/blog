@@ -2,7 +2,11 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
+import starlight from '@astrojs/starlight';
 import { defineConfig, fontProviders } from 'astro/config';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import starlightThemeRapide from 'starlight-theme-rapide';
 
 const repository = process.env.GITHUB_REPOSITORY ?? 'your-github-username/blog';
 const [owner = 'your-github-username', repo = 'blog'] = repository.split('/');
@@ -15,7 +19,32 @@ const site = process.env.SITE_URL ?? `https://${owner}.github.io`;
 export default defineConfig({
 	site,
 	...(base ? { base } : {}),
-	integrations: [mdx(), sitemap()],
+	markdown: {
+		remarkPlugins: [remarkMath],
+		rehypePlugins: [[rehypeKatex, { output: 'htmlAndMathml' }]],
+	},
+	integrations: [
+		starlight({
+			title: 'Docs',
+			description: 'Technical notes, guides, and documentation.',
+			pagefind: false,
+			customCss: ['./src/styles/katex.css'],
+			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com' }],
+			sidebar: [
+				{
+					label: 'Overview',
+					items: [{ autogenerate: { directory: '.' } }],
+				},
+				{
+					label: 'Blog',
+					items: [{ autogenerate: { directory: 'blog' } }],
+				},
+			],
+			plugins: [starlightThemeRapide()],
+		}),
+		mdx(),
+		sitemap(),
+	],
 	fonts: [
 		{
 			provider: fontProviders.local(),
