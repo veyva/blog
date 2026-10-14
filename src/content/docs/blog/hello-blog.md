@@ -15,5 +15,6 @@ icloud同步blog文件夹，保存markdown文件和图片，多设备可同步�
 
 ![](./images/hello-blog/2026-10-10-09-25-59-image.png)
 
-- VS Code中安装Markdown Paste插件，Preferences → Settings中找到Markdown Paste配置，修改path参数`${fileDirname}/images/${fileBasenameNoExtension}"`,配置完成后使用command+option+v粘贴图片。
+- VS Code中安装Markdown Paste插件，Preferences → Settings中找到Markdown Paste配置，修改path参数`${fileDirname}/images/${fileBasenameNoExtension}"`,MarkdownPaste.basePath 留空，插件就会根据当前编辑的 Markdown 文件计算相对路径。 设置为 ${workspaceFolder} 会生成站点根路径。配置完成后使用command+option+v粘贴图片。
 
+![](images/hello-blog/20261013110607.png)
