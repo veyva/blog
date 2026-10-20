@@ -1,9 +1,11 @@
 ---
 title: "WWW｜阿里：基于自身历史的商品定价与Transformer生成的深度保序定价网络"
+theme: default
+themeName: "默认主题"
 ---
 
 **速览1**:
-阿里巴巴团队提出了一种面向电商动态定价的需求预测框架 TG-DIPricingNets（Transformer-Generated Deep Isotonic Pricing Networks）。利用商品历史数据，通过 Transformer 实现商品级个性化需求建模，提出DWMAPE 指标，预测商品在不同折扣水平下的需求，并据此寻找利润最优的定价方案。
+阿里巴巴团队提出了一种面向电商动态定价的需求预测框架。利用商品历史数据，通过 Transformer 实现商品级个性化需求建模，提出DWMAPE 指标，预测商品在不同折扣水平下的需求，并据此寻找利润最优的定价方案。
 
 **速览2**:
 基于1688平台数据评测，新框架的DWMAPE相对基线下降 3.90 个百分点，在真实场景数据回测中，模型建议价格对应的业务分组平均利润最高。
@@ -67,9 +69,8 @@ $$
 ### 基础模型：DIPricingNet
 ![](images/2026-10-15-阿里TG-DIPricingNets/20261018172450.png)
 
-DIPricingNet 是本文的基础需求预测架构，包含四个核心模块。Feature Encoder使用三层神经网络，将原始商品特征转换为稠密特征向量。Base-Demand Decoder输出非负标量，表示不打折情况下的基础需求。Discount Decoder输出长度为 $m$ 的非负向量，每个元素对应一个候选折扣水平，表示相应的潜在需求增量。**Discount Isotonic Mask根据折扣水平生成二值向量，随着折扣增加，掩码中 1 的数量增加，从结构上确保预测需求单调不减。**可以将其需求计算机制简化理解为：
-$$\hat Q(d)=B(X)\left[1+
-\sum_{j=1}^{m}a_j(X)M_j(d)\right]$$
+DIPricingNet 是本文的基础需求预测架构，包含四个核心模块。Feature Encoder使用三层神经网络，将原始商品特征转换为稠密特征向量。Base-Demand Decoder输出非负标量，表示不打折情况下的基础需求。Discount Decoder输出长度为 $m$ 的非负向量，每个元素对应一个候选折扣水平，表示相应的潜在需求增量。**Discount Isotonic Mask根据折扣水平生成二值向量，随着折扣增加，掩码中 1 的数量增加，从结构上确保预测需求单调不减**。可以将其需求计算机制简化理解为：
+$$\hat Q(d)=B(X)\left[1+\sum_{j=1}^{m}a_j(X)M_j(d)\right]$$
 其中，$B(X)$ 表示基础需求，$a_j(X)$ 表示非负折扣增量权重，$M_j(d)$ 表示对应折扣的单调掩码。
 
 ### 核心创新：Transformer 生成商品专属的模型权重
