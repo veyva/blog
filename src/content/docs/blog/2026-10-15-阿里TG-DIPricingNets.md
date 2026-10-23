@@ -2,6 +2,7 @@
 title: "WWW｜阿里：基于自身历史的商品定价与Transformer生成的深度保序定价网络"
 theme: default
 themeName: "默认主题"
+draft: false
 ---
 
 **速览1**:
@@ -139,7 +140,7 @@ $$\text{DWMAPE} = \sum_{i=1}^{t}(\text{WMAPE}\cdot\frac{cnt(item_i)}{sum\_cnt})$
 
 ## 图文速览
 
-
+![](images/2026-10-15-阿里TG-DIPricingNets/20261023135524.png)
 
 阿里巴巴团队提出了一种面向电商动态定价的需求预测框架。利用商品历史数据，通过 Transformer 实现商品级个性化需求建模，提出DWMAPE 指标，预测商品在不同折扣水平下的需求，并据此寻找利润最优的定价方案。
 
