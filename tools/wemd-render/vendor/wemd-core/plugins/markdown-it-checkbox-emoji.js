@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = markdownItCheckboxEmoji;
+function markdownItCheckboxEmoji(md) {
+    // 保存原始渲染器
+    const defaultRender = md.renderer.rules.html_inline;
+    md.renderer.rules.html_inline = (tokens, idx, options, env, self) => {
+        const token = tokens[idx];
+        const content = token.content;
+        // 检查是否是 checkbox input
+        if (content.includes('type="checkbox"') ||
+            content.includes("type='checkbox'")) {
+            // 选中的 checkbox
+            if (content.includes("checked")) {
+                return '<span style="font-size:1em;margin-right:4px">✅</span>';
+            }
+            // 未选中的 checkbox
+            return '<span style="font-size:1em;margin-right:4px">⬜</span>';
+        }
+        // 其他 html_inline 使用默认渲染
+        if (defaultRender) {
+            return defaultRender(tokens, idx, options, env, self);
+        }
+        return content;
+    };
+}

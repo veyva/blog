@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "astro dev",
     "new": "node scripts/new-post.mjs",
+    "wemd": "node tools/wemd-render/render.mjs",
+    "wemd-publish": "node tools/wemd-render/publish.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
