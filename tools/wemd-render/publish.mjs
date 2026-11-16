@@ -391,7 +391,34 @@ const run = async () => {
     if (!articlePath) usage();
     const sourcePath = path.resolve(articlePath);
     const source = fs.readFileSync(sourcePath, "utf8");
-    const result = await renderMarkdown(source);
+    const requestedFontCache = flagValue("font-cache");
+    const compactFlag = rest.includes("--compact");
+    let fontCacheUsed = requestedFontCache ?? "none";
+    let compactUsed = compactFlag;
+    let scaleUsed = 1;
+    let result = await renderMarkdown(source, {
+      fontCache: fontCacheUsed,
+      compact: compactUsed,
+    });
+    // WeChat's draft sanitizer strips SVG href/id, so formulas must keep fully
+    // inlined glyph paths. Large math-heavy articles can still exceed the draft
+    // size limit, so first try compacting the inline SVG metadata.
+    if (
+      !requestedFontCache &&
+      !compactUsed &&
+      Buffer.byteLength(result.fragment) > 560_000
+    ) {
+      compactUsed = true;
+      result = await renderMarkdown(source, { fontCache: "none", compact: true });
+      if (Buffer.byteLength(result.fragment) > 560_000) {
+        scaleUsed = 0.05;
+        result = await renderMarkdown(source, {
+          fontCache: "none",
+          compact: true,
+          scale: scaleUsed,
+        });
+      }
+    }
     const sourceDir = path.dirname(sourcePath);
 
     const rewritten = await rewriteImages(result.fragment, api, sourceDir);
@@ -442,6 +469,9 @@ const run = async () => {
           imageCount: rewritten.imageCount,
           formulaSvgs: result.formulaSvgs,
           formulaFallbacks: result.formulaFallbacks,
+          fontCache: fontCacheUsed,
+          compact: compactUsed,
+          scale: scaleUsed,
           bytes: Buffer.byteLength(rewritten.html),
         },
         null,

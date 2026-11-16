@@ -423,7 +423,28 @@ const normalizeForWechat = (html) => {
   return $.root().html() || "";
 };
 
-const renderFormulasAsSvg = (html, MathJax) => {
+const scaleNumberText = (text, factor) =>
+  text.replace(/-?\d+(?:\.\d+)?/g, (value) =>
+    String(Math.round(Number.parseFloat(value) * factor)),
+  );
+
+const scaleSvgCoordinates = (fragment, factor) => {
+  if (!Number.isFinite(factor) || factor <= 0 || factor === 1) {
+    return fragment;
+  }
+  return fragment
+    .replace(/(\sd=")([^"]*)(")/g, (_m, open, d, close) =>
+      `${open}${scaleNumberText(d, factor)}${close}`,
+    )
+    .replace(/(\stranslate\()([^)]*)(\))/g, (_m, open, args, close) =>
+      `${open}${scaleNumberText(args, factor)}${close}`,
+    )
+    .replace(/(\sviewBox=")([^"]*)(")/gi, (_m, open, box, close) =>
+      `${open}${scaleNumberText(box, factor)}${close}`,
+    );
+};
+
+const renderFormulasAsSvg = (html, MathJax, fontCache = "none") => {
   const $ = cheerio.load(html, { decodeEntities: false }, false);
   let fallbackCount = 0;
   let svgCount = 0;
@@ -492,10 +513,26 @@ const renderFormulasAsSvg = (html, MathJax) => {
     html: $.root().html() || "",
     fallbackCount,
     svgCount,
+    globalDefs:
+      fontCache === "global" &&
+      MathJax.startup.output.fontCache?.defs
+        ? MathJax.startup.adaptor.outerHTML(MathJax.startup.output.fontCache.defs)
+        : "",
   };
 };
 
-export async function renderMarkdown(source) {
+const injectGlobalDefs = (fragment, defsHtml) => {
+  if (!defsHtml) return fragment;
+  const cacheSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">${defsHtml}</svg>`;
+  return fragment.replace(
+    /(<div[^>]*data-wemd-root[^>]*>)/,
+    `$1${cacheSvg}`,
+  );
+};
+
+export async function renderMarkdown(source, options = {}) {
+  const fontCache = options.fontCache ?? "none";
+  const compact = options.compact === true;
   const meta = splitFrontmatter(source);
   if (meta.theme !== "default") {
     console.warn(
@@ -526,7 +563,7 @@ export async function renderMarkdown(source) {
         sout: ["\\enclose{horizontalstrike}{#1}", 1],
       },
     },
-    svg: { fontCache: "none" },
+    svg: { fontCache },
   });
   const katexCssPath = require.resolve("katex/dist/katex.min.css");
   const themeStyles = [
@@ -536,8 +573,21 @@ export async function renderMarkdown(source) {
     fs.readFileSync(katexCssPath, "utf8"),
   ].join("\n");
   const themedFragment = processHtml(rawHtml, themeStyles, true, true);
-  const formulas = renderFormulasAsSvg(themedFragment, MathJax);
-  const fragment = normalizeForWechat(formulas.html);
+  const formulas = renderFormulasAsSvg(themedFragment, MathJax, fontCache);
+  let fragment = injectGlobalDefs(
+    normalizeForWechat(formulas.html),
+    formulas.globalDefs,
+  );
+  if (compact) {
+    fragment = fragment
+      .replace(/\sdata-mml-node="[^"]*"/g, "")
+      .replace(/\sdata-c="[^"]*"/g, "")
+      .replace(/\srole="img"/g, "")
+      .replace(/\sfocusable="false"/g, "");
+  }
+  if (options.scale) {
+    fragment = scaleSvgCoordinates(fragment, options.scale);
+  }
 
   return {
     meta,
