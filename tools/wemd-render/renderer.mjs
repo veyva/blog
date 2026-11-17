@@ -433,13 +433,13 @@ const scaleSvgCoordinates = (fragment, factor) => {
     return fragment;
   }
   return fragment
-    .replace(/(\sd=")([^"]*)(")/g, (_m, open, d, close) =>
+    .replace(/(d=")([^"]*)(")/g, (_m, open, d, close) =>
       `${open}${scaleNumberText(d, factor)}${close}`,
     )
-    .replace(/(\stranslate\()([^)]*)(\))/g, (_m, open, args, close) =>
+    .replace(/(translate\()([^)]*)(\))/g, (_m, open, args, close) =>
       `${open}${scaleNumberText(args, factor)}${close}`,
     )
-    .replace(/(\sviewBox=")([^"]*)(")/gi, (_m, open, box, close) =>
+    .replace(/(viewBox=")([^"]*)(")/gi, (_m, open, box, close) =>
       `${open}${scaleNumberText(box, factor)}${close}`,
     );
 };
