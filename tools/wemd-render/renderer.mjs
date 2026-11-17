@@ -441,6 +441,11 @@ const scaleSvgCoordinates = (fragment, factor) => {
     )
     .replace(/(viewBox=")([^"]*)(")/gi, (_m, open, box, close) =>
       `${open}${scaleNumberText(box, factor)}${close}`,
+    )
+    .replace(
+      /(\s(?:x|y|width|height|rx|ry|r|cx|cy|stroke-width)=")([^"]*)(")/gi,
+      (_m, open, value, close) =>
+        `${open}${scaleNumberText(value, factor)}${close}`,
     );
 };
 
