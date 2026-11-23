@@ -393,12 +393,15 @@ const run = async () => {
     const source = fs.readFileSync(sourcePath, "utf8");
     const requestedFontCache = flagValue("font-cache");
     const compactFlag = rest.includes("--compact");
+    const requestedScale = flagValue("scale");
     let fontCacheUsed = requestedFontCache ?? "none";
     let compactUsed = compactFlag;
-    let scaleUsed = 1;
+    let scaleUsed = requestedScale ? Number.parseFloat(requestedScale) : 1;
+    if (!Number.isFinite(scaleUsed) || scaleUsed <= 0) scaleUsed = 1;
     let result = await renderMarkdown(source, {
       fontCache: fontCacheUsed,
       compact: compactUsed,
+      scale: scaleUsed,
     });
     // WeChat's draft sanitizer strips SVG href/id, so formulas must keep fully
     // inlined glyph paths. Large math-heavy articles can still exceed the draft
@@ -406,6 +409,7 @@ const run = async () => {
     if (
       !requestedFontCache &&
       !compactUsed &&
+      !requestedScale &&
       Buffer.byteLength(result.fragment) > 560_000
     ) {
       compactUsed = true;
