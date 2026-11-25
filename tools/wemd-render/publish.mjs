@@ -447,14 +447,18 @@ const run = async () => {
 
     const article = {
       title: result.meta.title || path.basename(sourcePath).replace(/\.md$/i, ""),
+      author: result.meta.author || "时空与营销",
       content: rewritten.html,
       thumb_media_id: thumbMediaId,
       show_cover_pic: result.meta.showCoverPic === false ? 0 : 1,
+      need_open_comment: result.meta.needOpenComment === false ? 0 : 1,
     };
-    if (result.meta.author) article.author = result.meta.author;
     if (result.meta.digest) article.digest = result.meta.digest;
     if (result.meta.contentSourceUrl) {
       article.content_source_url = result.meta.contentSourceUrl;
+    }
+    if (result.meta.onlyFansCanComment !== undefined) {
+      article.only_fans_can_comment = result.meta.onlyFansCanComment ? 1 : 0;
     }
 
     const mediaId = await api.createDraft({ articles: [article] });

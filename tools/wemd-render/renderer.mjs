@@ -57,6 +57,12 @@ const splitFrontmatter = (source) => {
     digest: firstNonEmpty(get("digest"), get("summary"), get("description")),
     contentSourceUrl: get("content_source_url") || get("contentSourceUrl"),
     showCoverPic: toBoolean(get("show_cover_pic") ?? get("showCoverPic")),
+    needOpenComment: toBoolean(
+      get("need_open_comment") ?? get("needOpenComment"),
+    ),
+    onlyFansCanComment: toBoolean(
+      get("only_fans_can_comment") ?? get("onlyFansCanComment"),
+    ),
   };
 };
 
