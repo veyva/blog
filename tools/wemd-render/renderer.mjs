@@ -91,9 +91,17 @@ const parseBoxValue = (element, property, side) => {
   return values[{ top: 0, right: 1, bottom: 2, left: 3 }[side]];
 };
 
+const PX_VALUE_RE = /^(\d+(?:\.\d+)?)px$/;
+
 const mergeSpacing = (existing, incoming) => {
   if (!existing || isZeroSpacing(existing)) return incoming;
   if (existing.trim().toLowerCase() === "auto") return existing;
+  const left = existing.trim().match(PX_VALUE_RE);
+  const right = String(incoming).trim().match(PX_VALUE_RE);
+  if (left && right) {
+    const total = Number(left[1]) + Number(right[1]);
+    return `${Math.round(total * 1000) / 1000}px`;
+  }
   return `calc(${existing} + ${incoming})`;
 };
 
